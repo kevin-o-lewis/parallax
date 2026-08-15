@@ -12,7 +12,7 @@ Exactly one feature should be `Next` at any time.
 | # | Feature | Milestone | Status | Spec | Plan | Ledger |
 |---|---|---|---|---|---|---|
 | 1 | Search & source selection interface | MVP | Done | [Spec](superpowers/specs/2026-08-15-search-source-selection-design.md) | [Plan](superpowers/plans/2026-08-15-search-source-selection.md) | [Ledger](superpowers/ledgers/2026-08-15-search-source-selection.md) |
-| 2 | News API integration | MVP | Next | — | — | — |
+| 2 | News API integration | MVP | In progress | — | — | — |
 | 3 | Claude API analysis | MVP | — | — | — | — |
 | 4 | Results display with traceability | MVP | — | — | — | — |
 
