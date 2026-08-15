@@ -1,0 +1,98 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 0 20px;
+  color: #1a1a1a;
+}
+
+h1 {
+  font-size: 24px;
+  margin-bottom: 24px;
+}
+
+.field {
+  margin-bottom: 24px;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+input[type="text"].invalid {
+  border-color: #cc0000;
+}
+
+.source-actions {
+  margin-bottom: 12px;
+}
+
+.source-actions button {
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.source-list {
+  border: 1px solid #ddd;
+  padding: 16px;
+  border-radius: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+  font-size: 13px;
+  background: #fafafa;
+}
+
+.source-item {
+  display: block;
+  font-weight: normal;
+  margin-bottom: 8px;
+}
+
+.error {
+  color: #cc0000;
+  font-size: 13px;
+  margin-top: 6px;
+  min-height: 16px;
+}
+
+#submit-btn {
+  background: #0066cc;
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+#submit-btn:disabled {
+  background: #99bbdd;
+  cursor: not-allowed;
+}
+
+.progress {
+  margin-top: 16px;
+  font-size: 13px;
+  color: #555;
+}
