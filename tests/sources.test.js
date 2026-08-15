@@ -2,8 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { NEWS_SOURCES, DEFAULT_SELECTED_SOURCE_IDS } = require('../src/sources.js');
 
-test('has exactly 31 sources', () => {
-  assert.equal(NEWS_SOURCES.length, 31);
+test('has exactly 20 sources', () => {
+  assert.equal(NEWS_SOURCES.length, 20);
 });
 
 test('every source has a non-empty id and name', () => {
