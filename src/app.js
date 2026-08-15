@@ -86,10 +86,14 @@ document.addEventListener('DOMContentLoaded', () => {
     runPipeline(topic, selectedSourceIds, (stage) => {
       progressEl.textContent = stage;
     }).then((result) => {
-      progressEl.textContent = 'Done — see console for collected data (analysis not yet implemented).';
+      if (result.articles.length === 0) {
+        progressEl.textContent = 'No articles found for this topic in the selected sources over the last 7 days. Try different sources or a broader topic.';
+      } else {
+        progressEl.textContent = 'Fetched ' + result.articles.length + ' articles. See console for data (Claude analysis not yet implemented).';
+      }
       console.log('Pipeline result:', result);
     }).catch((err) => {
-      progressEl.textContent = 'Something went wrong. Please try again.';
+      progressEl.textContent = err.message;
       setFormDisabled(false);
       console.error(err);
     });
