@@ -1,29 +1,20 @@
-const PIPELINE_STAGES = [
-  'Fetching articles from selected sources…',
-  'Analyzing with Claude…',
-];
+const FETCH_STAGE_LABEL = 'Fetching articles from selected sources…';
 
-function runPipeline(topic, selectedSourceIds, onStageChange, delayMs) {
-  const delay = typeof delayMs === 'number' ? delayMs : 600;
+function runPipeline(topic, selectedSourceIds, onStageChange) {
+  onStageChange(FETCH_STAGE_LABEL);
 
-  return new Promise((resolve) => {
-    let stageIndex = 0;
-    onStageChange(PIPELINE_STAGES[stageIndex]);
+  const params = new URLSearchParams({ topic, sources: selectedSourceIds.join(',') });
 
-    const advance = () => {
-      stageIndex += 1;
-      if (stageIndex < PIPELINE_STAGES.length) {
-        onStageChange(PIPELINE_STAGES[stageIndex]);
-        setTimeout(advance, delay);
-      } else {
-        resolve({ topic, sources: selectedSourceIds });
+  return fetch('/api/articles?' + params.toString())
+    .then((response) => response.json().then((data) => ({ response, data })))
+    .then(({ response, data }) => {
+      if (!response.ok) {
+        throw new Error(data.error || 'Something went wrong fetching articles.');
       }
-    };
-
-    setTimeout(advance, delay);
-  });
+      return { topic, sources: selectedSourceIds, articles: data };
+    });
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { runPipeline, PIPELINE_STAGES };
+  module.exports = { runPipeline, FETCH_STAGE_LABEL };
 }
