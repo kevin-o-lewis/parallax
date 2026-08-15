@@ -36,12 +36,30 @@ workflow:
 1. One-time: copy `config.example.json` to `config.local.json` and paste in a
    real NewsAPI key. `config.local.json` is gitignored; `config.example.json`
    (with a placeholder value) is committed so the shape is documented.
-2. Every run: `node server.js` in a terminal, then visit `http://localhost:3000`
-   in a browser. `Ctrl+C` to stop.
+2. Every run: double-click `start.bat`. It opens the default browser to
+   `http://localhost:3000` and starts the server in the same console window,
+   so server logs (including the fail-fast config error, if any) stay visible.
+   Closing the console window or pressing `Ctrl+C` in it stops the server; a
+   final `pause` keeps the window open after the server exits (whether from
+   `Ctrl+C` or a startup failure) so any last message can actually be read
+   before the window closes.
 
-No `.bat`/`.exe` launcher — running `node server.js` directly is deliberately
-kept as the only way to start it, per explicit preference for minimum moving
-parts.
+`start.bat` (Windows-only, matching this project's development environment):
+
+```bat
+@echo off
+start http://localhost:3000
+node server.js
+pause
+```
+
+Running `node server.js` directly still works exactly as before — `start.bat`
+is a thin convenience wrapper around it, not a replacement mechanism. Note the
+browser opens slightly before the server is guaranteed to be listening; on a
+local machine this race is essentially never noticeable, but if the page ever
+loads before the server responds, a manual refresh resolves it. This is a
+deliberate, disclosed trade-off in favor of staying simple, not a bug to
+engineer around.
 
 **Startup validation:** if `config.local.json` is missing, unreadable, or has
 no `newsApiKey` value, the server prints `Missing config.local.json — copy
@@ -185,5 +203,7 @@ its DOM-wiring layer).
 - Full article text retrieval (NewsAPI free tier doesn't provide it; noted
   above as a known limitation for Feature 3 to address)
 - User-configurable date range (explicitly declined; fixed 7 days)
-- A `.bat`/`.exe` convenience launcher (explicitly declined)
+- Cross-platform launcher scripts (macOS/Linux) — `start.bat` is Windows-only,
+  matching this project's development environment; `node server.js` remains
+  the manual fallback on any platform
 - Caching, request retries, or offline handling beyond the error messages above
