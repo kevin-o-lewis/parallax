@@ -11,6 +11,10 @@ Exactly one feature should be `Next` at any time.
 
 | # | Feature | Milestone | Status | Spec | Plan | Ledger |
 |---|---|---|---|---|---|---|
+| 1 | Search & source selection interface | MVP | Next | — | — | — |
+| 2 | News API integration | MVP | — | — | — | — |
+| 3 | Claude API analysis | MVP | — | — | — | — |
+| 4 | Results display with traceability | MVP | — | — | — | — |
 
 ## Session Notes
 
