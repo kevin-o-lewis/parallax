@@ -171,10 +171,13 @@ selected sources…" then "Analyzing with Claude…". This feature:
   it exists.
 - On success, resolves with `{ topic, sources, articles }` (adds `articles` to
   the existing `{topic, sources}` shape from Feature 1).
-- The completion message becomes "Fetched N articles. See console for data
-  (Claude analysis not yet implemented)." (N = `articles.length`, including
-  0 — the zero-results case above still resolves successfully with an empty
-  array and this message, it is not routed through the error path).
+- The completion message shown depends on `articles.length`: if it's `0`,
+  show the distinct zero-results message from the Response shape section
+  above ("No articles found for this topic in the selected sources over the
+  last 7 days. Try different sources or a broader topic."); otherwise show
+  "Fetched N articles. See console for data (Claude analysis not yet
+  implemented)." Both cases resolve successfully — zero results is not routed
+  through the error path.
 - On failure, `app.js`'s existing `.catch()` branch displays whichever
   category message applies (table above) instead of the current generic
   "Something went wrong" text, and still re-enables the form as it does today.
