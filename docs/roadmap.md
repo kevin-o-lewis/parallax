@@ -13,10 +13,51 @@ Exactly one feature should be `Next` at any time.
 |---|---|---|---|---|---|---|
 | 1 | Search & source selection interface | MVP | Done | [Spec](superpowers/specs/2026-08-15-search-source-selection-design.md) | [Plan](superpowers/plans/2026-08-15-search-source-selection.md) | [Ledger](superpowers/ledgers/2026-08-15-search-source-selection.md) |
 | 2 | News API integration | MVP | Done | [Spec](superpowers/specs/2026-08-15-news-api-integration-design.md) | [Plan](superpowers/plans/2026-08-15-news-api-integration.md) | [Ledger](superpowers/ledgers/2026-08-15-news-api-integration.md) |
-| 3 | Claude API analysis | MVP | In progress | — | — | — |
-| 4 | Results display with traceability | MVP | — | — | — | — |
+| 3 | Claude API analysis | MVP | Done | [Spec](superpowers/specs/2026-08-15-claude-api-analysis-design.md) | [Plan](superpowers/plans/2026-08-15-claude-api-analysis.md) | [Ledger](superpowers/ledgers/2026-08-15-claude-api-analysis.md) |
+| 4 | Results display with traceability | MVP | Next | — | — | — |
 
 ## Session Notes
+
+## 2026-08-16
+
+**Shipped:** Feature 3 — Claude API analysis. Given the articles Feature 2
+already fetches, the app now scrapes each one's full text, sends it to Claude
+Sonnet 5 to extract structured facts and neutral opposing perspectives with
+verbatim citations, and independently verifies every citation against the
+real article text server-side before it can reach the client — replacing the
+"Claude analysis not yet implemented" stub with a real second pipeline stage.
+
+**Session Summary:** The design session surfaced a real gap partway through:
+NewsAPI's free tier only returns a short snippet, not full article text,
+which the PM judged too thin for a tool meant to synthesize *complex* news
+information. Resolution was full-text scraping — this project's first npm
+dependency (`@extractus/article-extractor`), a deliberate, documented
+exception to the "zero dependencies" stack rule, added specifically because
+hand-rolling reliable HTML extraction across arbitrary news sites was judged
+not worth the purity. Citation verification (server-side substring matching
+of every quote against the actual text sent to Claude) is the resulting core
+anti-hallucination mechanism — enforced in code, not prompt-trust.
+
+Built via `subagent-driven-development` (10 tasks, two-stage review each).
+Real issues were caught and fixed along the way, not rubber-stamped: a test
+file that silently lost the literal characters it was supposed to test, a
+scope-creep fix on the citation-matching logic that had to be trimmed back
+down, a missing debug log on a real error path, and — from a final holistic
+review across the whole branch after all 10 tasks — two more gaps a
+per-task review couldn't have caught (no timeout on the Claude API call;
+`thinking` left unconfigured on a model that shares its token budget between
+thinking and output). Full task-by-task record in the ledger.
+
+**Known gap, carried forward:** real-key end-to-end verification could not be
+run in this environment — no NewsAPI or Anthropic keys were available. Every
+error path and the success/zero-results branching were verified live, but a
+genuine analyzed result from a real search, with real citations spot-checked
+against real source text, hasn't happened yet. Do that before relying on this
+for actual use.
+
+**Still open:** results display (Feature 4, up next) will consume this
+feature's structured `{facts, perspectives}` output — currently it's only
+console-logged behind a progress-message summary count.
 
 ## 2026-08-15 (2)
 
