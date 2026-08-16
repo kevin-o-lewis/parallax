@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Parallax</title>
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <main>
+    <h1>Parallax</h1>
+
+    <div class="field">
+      <label for="topic-input">What topic do you want to research?</label>
+      <input type="text" id="topic-input" placeholder="e.g., AI regulation, Ukraine conflict, climate change">
+      <p class="error" id="topic-error"></p>
+    </div>
+
+    <div class="field">
+      <label>Select news sources (20 available)</label>
+      <div class="source-actions">
+        <button type="button" id="select-all-btn">Select All</button>
+        <button type="button" id="deselect-all-btn">Deselect All</button>
+      </div>
+      <div class="source-list" id="source-list"></div>
+      <p class="error" id="sources-error"></p>
+    </div>
+
+    <button type="button" id="submit-btn" disabled>Submit</button>
+
+    <p class="progress" id="progress"></p>
+  </main>
+
+  <script src="src/sources.js"></script>
+  <script src="src/validation.js"></script>
+  <script src="src/pipeline.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>

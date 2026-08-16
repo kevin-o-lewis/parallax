@@ -10,6 +10,16 @@ News consumption is fragmented and time-consuming. When a major story breaks, ge
 
 Parallax lets you search for any news topic and select which sources to trust. It fetches recent articles on that topic, sends them to Claude for synthesis, and returns a structured breakdown: key facts with supporting quotes and sources, plus the distinct perspectives different outlets are taking on those facts. Every claim is traceable back to the original article, so you can verify before forming an opinion.
 
+## Search window
+
+Parallax searches the last 7 days of articles for each topic. This is a
+deliberate default, not a NewsAPI limitation — the underlying API (free tier)
+actually allows searching up to a month back. 7 days was chosen to keep
+results focused on the current state of a story rather than older context.
+Two other free-tier constraints shape this too: articles are searchable up to
+1 month old at most, and there's a 24-hour delay before an article becomes
+searchable.
+
 ## Status
 
 Pre-MVP
