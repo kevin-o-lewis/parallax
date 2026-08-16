@@ -3,7 +3,7 @@
 Gather news on any topic from multiple trusted sources and synthesize them into structured facts and opposing interpretations, each with direct quotes and source links.
 
 **Type:** Personal Tool  
-**Stack:** Vanilla HTML/CSS/JavaScript. No framework, no build step. A backend runtime for API-key handling (Feature 2) is still undecided.
+**Stack:** Vanilla HTML/CSS/JavaScript on the front end; a plain Node.js server (built-in modules only, zero npm dependencies) handles API-key proxying server-side.
 
 ## Constraints
 
