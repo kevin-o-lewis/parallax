@@ -1,8 +1,12 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { extract } = require('@extractus/article-extractor');
 const { buildArticlesUrl, normalizeArticles, mapNewsApiError, compileBalancedArticles } = require('./src/newsapi.js');
 const { resolveFilePath, resolveContentType } = require('./src/static-files.js');
+const { selectArticlesForAnalysis, prepareArticleForAnalysis, extractArticleText } = require('./src/articleText.js');
+const { callClaudeAnalysis } = require('./src/claude.js');
+const { verifyAnalysis } = require('./src/citations.js');
 
 const ROOT_DIR = __dirname;
 const PORT = 3000;
@@ -35,6 +39,15 @@ if (!config) {
   process.exit(1);
 }
 
+function readRequestBody(req) {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', (chunk) => { data += chunk; });
+    req.on('end', () => resolve(data));
+    req.on('error', reject);
+  });
+}
+
 function serveStaticFile(pathname, res) {
   const filePath = resolveFilePath(pathname, ROOT_DIR);
   if (!filePath) {
@@ -63,6 +76,16 @@ function serveStaticFile(pathname, res) {
 // because relevancy-ranking and recency surface largely different articles.
 const RELEVANCY_CAP_PER_SOURCE = 3;
 const FINAL_CAP_PER_SOURCE = 5;
+
+// Bounds for the /api/analyze pipeline. Tuned for cost/latency control: real
+// searches rarely return anywhere near the theoretical max article count
+// (see the caps above), so this rarely binds, but every search scrapes N
+// URLs and sends their text to a paid API, so an explicit ceiling matters.
+const MAX_ARTICLES_TO_ANALYZE = 25;
+const ARTICLE_TEXT_CHAR_CAP = 8000;
+const FALLBACK_TEXT_THRESHOLD = 500;
+const SCRAPE_TIMEOUT_MS = 8000;
+const CLAUDE_MODEL = 'claude-sonnet-5';
 
 // Fetches one NewsAPI URL and returns either { articles } (normalized) or
 // { error } (mapped via mapNewsApiError). Does not catch network-level
@@ -134,6 +157,73 @@ async function handleArticlesRequest(url, res) {
   res.end(JSON.stringify(articles));
 }
 
+async function handleAnalyzeRequest(req, res) {
+  let body;
+  try {
+    const raw = await readRequestBody(req);
+    body = JSON.parse(raw);
+  } catch (err) {
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: "Something's wrong with the request Parallax sent to analyze. Check the server logs." }));
+    return;
+  }
+
+  const { topic, articles } = body;
+  if (!topic || !Array.isArray(articles)) {
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: "Something's wrong with the request Parallax sent to analyze. Check the server logs." }));
+    return;
+  }
+
+  const selectedArticles = selectArticlesForAnalysis(articles, MAX_ARTICLES_TO_ANALYZE);
+
+  const extractedTexts = await Promise.all(
+    selectedArticles.map((article) => extractArticleText(article.url, extract, SCRAPE_TIMEOUT_MS))
+  );
+
+  const preparedArticles = selectedArticles.map((article, index) =>
+    prepareArticleForAnalysis(article, extractedTexts[index], {
+      fallbackThreshold: FALLBACK_TEXT_THRESHOLD,
+      maxCharsPerArticle: ARTICLE_TEXT_CHAR_CAP,
+    })
+  );
+
+  let claudeResult;
+  try {
+    claudeResult = await callClaudeAnalysis(topic, preparedArticles, config.claudeApiKey, CLAUDE_MODEL);
+  } catch (err) {
+    console.error('Failed to reach the Claude API:', err);
+    res.writeHead(502, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: "Couldn't reach the Claude API. Check your internet connection and try again." }));
+    return;
+  }
+
+  if (claudeResult.error) {
+    console.error('Claude analysis failed:', claudeResult.error.status, claudeResult.error.message);
+    res.writeHead(claudeResult.error.status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: claudeResult.error.message }));
+    return;
+  }
+
+  const verified = verifyAnalysis(claudeResult.result, preparedArticles);
+  const droppedFacts = claudeResult.result.facts.length - verified.facts.length;
+  const droppedPerspectives = claudeResult.result.perspectives.length - verified.perspectives.length;
+  if (droppedFacts > 0 || droppedPerspectives > 0) {
+    console.error(`Citation verification dropped ${droppedFacts} fact(s) and ${droppedPerspectives} perspective(s) that failed verification.`);
+  }
+
+  const articlesUsingFallbackText = preparedArticles.filter((article) => article.usedFallback).length;
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({
+    topic,
+    facts: verified.facts,
+    perspectives: verified.perspectives,
+    articlesAnalyzed: preparedArticles.length,
+    articlesUsingFallbackText,
+  }));
+}
+
 const server = http.createServer((req, res) => {
   let url;
   try {
@@ -150,6 +240,15 @@ const server = http.createServer((req, res) => {
       console.error('Unexpected error handling /api/articles:', err);
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: "Something's wrong with the request Parallax sent to NewsAPI. Check the server logs." }));
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/analyze') {
+    handleAnalyzeRequest(req, res).catch((err) => {
+      console.error('Unexpected error handling /api/analyze:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Something went wrong analyzing the articles. Check the server logs.' }));
     });
     return;
   }
