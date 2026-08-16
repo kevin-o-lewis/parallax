@@ -27,8 +27,6 @@ const NEWS_SOURCES = [
   { id: 'usa-today', name: 'USA Today' },
 ];
 
-const DEFAULT_SELECTED_SOURCE_IDS = ['bbc-news', 'associated-press', 'reuters'];
-
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { NEWS_SOURCES, DEFAULT_SELECTED_SOURCE_IDS };
+  module.exports = { NEWS_SOURCES };
 }
