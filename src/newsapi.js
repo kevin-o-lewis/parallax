@@ -2,7 +2,7 @@ function formatDate(date) {
   return date.toISOString().slice(0, 10);
 }
 
-function buildArticlesUrl(topic, sourceIds, apiKey, now) {
+function buildArticlesUrl(topic, sourceIds, apiKey, now, sortBy) {
   const referenceDate = now || new Date();
   const to = new Date(referenceDate);
   const from = new Date(referenceDate);
@@ -13,12 +13,46 @@ function buildArticlesUrl(topic, sourceIds, apiKey, now) {
     sources: sourceIds.join(','),
     from: formatDate(from),
     to: formatDate(to),
-    sortBy: 'relevancy',
-    pageSize: '20',
+    sortBy: sortBy || 'relevancy',
+    pageSize: '100',
     apiKey,
   });
 
   return 'https://newsapi.org/v2/everything?' + params.toString();
+}
+
+// Combines two already-normalized article lists (see normalizeArticles) into
+// one balanced list, so no single source can dominate purely because it
+// ranks highly on one sort criterion. `firstCallArticles` is expected to be
+// relevancy-sorted and `secondCallArticles` publishedAt-sorted (newest
+// first), though this function itself is agnostic to sort order — it just
+// applies caps in the order given.
+//
+// Behavior: articles from `firstCallArticles` are added up to `firstCap` per
+// source. Articles from `secondCallArticles` are then added on top, per
+// source, up to `finalCap` total (so a source already at `firstCap` can gain
+// at most `finalCap - firstCap` more, and a source with zero from the first
+// call can gain up to `finalCap`). Articles are deduplicated by `url` across
+// both calls. Relative order within each call is preserved.
+function compileBalancedArticles(firstCallArticles, secondCallArticles, firstCap, finalCap) {
+  const perSourceCount = {};
+  const seenUrls = new Set();
+  const compilation = [];
+
+  function tryAdd(article, cap) {
+    const count = perSourceCount[article.sourceName] || 0;
+    if (seenUrls.has(article.url) || count >= cap) {
+      return;
+    }
+    perSourceCount[article.sourceName] = count + 1;
+    seenUrls.add(article.url);
+    compilation.push(article);
+  }
+
+  firstCallArticles.forEach((article) => tryAdd(article, firstCap));
+  secondCallArticles.forEach((article) => tryAdd(article, finalCap));
+
+  return compilation;
 }
 
 function normalizeArticles(rawArticles) {
@@ -50,4 +84,4 @@ function mapNewsApiError(code) {
   return { status: 502, message: "Couldn't reach NewsAPI. Check your internet connection and try again." };
 }
 
-module.exports = { buildArticlesUrl, normalizeArticles, mapNewsApiError };
+module.exports = { buildArticlesUrl, normalizeArticles, mapNewsApiError, compileBalancedArticles };

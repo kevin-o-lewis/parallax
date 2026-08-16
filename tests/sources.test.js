@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { NEWS_SOURCES, DEFAULT_SELECTED_SOURCE_IDS } = require('../src/sources.js');
+const { NEWS_SOURCES } = require('../src/sources.js');
 
 test('has exactly 20 sources', () => {
   assert.equal(NEWS_SOURCES.length, 20);
@@ -18,11 +18,4 @@ test('every source has a non-empty id and name', () => {
 test('source ids are unique', () => {
   const ids = NEWS_SOURCES.map((s) => s.id);
   assert.equal(new Set(ids).size, ids.length);
-});
-
-test('every default selected id exists in the full source list', () => {
-  const ids = new Set(NEWS_SOURCES.map((s) => s.id));
-  for (const defaultId of DEFAULT_SELECTED_SOURCE_IDS) {
-    assert.ok(ids.has(defaultId), `${defaultId} not found in NEWS_SOURCES`);
-  }
 });

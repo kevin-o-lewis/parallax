@@ -95,12 +95,125 @@ ledger file during execution.
   2. Raw, non-HTTP `fetch()` failures in `pipeline.js` (e.g. the local server dying mid-session) aren't caught, so the browser's native error text surfaces instead of a designed message — out of the spec's scope (which only covers NewsAPI-side errors), low-likelihood locally.
   3. README doesn't yet document the new `config.local.json` setup workflow — faithfully out of scope per the plan's narrow Task 9 (only the search-window note was in scope); a fresh clone currently has no in-README path from "clone" to "app that fetches articles."
 
+## Post-PR: closing the source-ID gap, and a source-list overhaul
+
+After the PR was opened, the PM supplied a real NewsAPI key so the flagged
+gap could actually be closed. Two things came out of that, one expected and
+one not:
+
+1. **Expected:** a real end-to-end verification became possible for the
+   first time — real searches now return real articles (confirmed via
+   direct inspection of the response payload: correct titles, URLs, publish
+   dates within the 7-day window, correct `sourceName` attribution, and the
+   documented `content`-field truncation behavior all present exactly as
+   designed), and the zero-results path was also confirmed live (a narrow
+   topic against the 3-source original default set genuinely returned zero
+   results and showed the distinct message, not an error).
+
+2. **Unexpected:** live verification against NewsAPI's
+   `/v2/top-headlines/sources` endpoint found that 3 of the 20 curated ids
+   — `cnbc`, `reuters`, `the-guardian-uk` — aren't typos or wrong ids at
+   all. Those publishers have been removed from NewsAPI's catalog entirely
+   (confirmed by pulling and searching the full live 125-source list; no
+   match for CNBC, Reuters, or Guardian under any id or name). This is a
+   materially different problem than the one flagged pre-PR: no id fix
+   could have resolved it, since the sources themselves are gone from the
+   API.
+
+Separately, while reviewing this, the PM asked whether Feature 1's original
+3 pre-checked default sources (BBC News, AP News, Reuters) had ever actually
+been chosen by them — they hadn't; that choice was made unilaterally during
+Feature 1's design and bundled into a broader design presentation rather
+than asked as its own question. Per explicit direction, **defaults were
+removed entirely** (`DEFAULT_SELECTED_SOURCE_IDS` deleted from
+`src/sources.js`, `src/app.js`, and `tests/sources.test.js`) — no source is
+pre-checked; the user must select at least one before Submit enables, same
+as existing validation already required.
+
+That, plus the dead-source discovery, prompted a full restart of source
+curation — this time explicitly PM-driven rather than inherited from
+`docs/prd-parallax.md`'s original (also-unverified) "31 sources available"
+list. Process: pulled NewsAPI's live 125-source catalog, filtered to
+English-language, then by category (business/technology/science/general;
+sports and health excluded), then the PM hand-selected sources
+interactively (via a checklist widget) across two passes — non-general
+categories first, then general split into US/World. The PM then asked for
+a factuality/political-lean analysis of the resulting 20 (grounded in
+widely-cited third-party media-bias trackers — AllSides, Ad Fontes, Pew —
+not asserted as the assistant's own political judgment), which surfaced a
+real Left-leaning skew (10 Left/Lean-Left vs. 2 Right, with 4 Center
+anchors). Two swaps followed based on that analysis: Vice News (dropped for
+both a Left-leaning-skew concern and an independent post-2023-bankruptcy
+reliability concern) and Breitbart News (dropped for a factual-reliability
+concern, not just lean) were replaced with National Review and The
+Washington Times — both Right-leaning and rated more reliable by the same
+trackers than Breitbart was.
+
+Final 20-source list (live-verified, PM-curated): Al Jazeera English,
+Associated Press, Axios, BBC News, Bloomberg, Business Insider, CNN,
+Fortune, Fox News, Google News, National Review, Politico, TechCrunch, The
+Verge, The Wall Street Journal, The Washington Post, The Washington Times,
+Time, USA Today, Wired. One caveat carried forward: Google News is an
+aggregator, not a single editorial voice — it behaves differently from the
+other 19 for source-attribution purposes, flagged to the PM at selection
+time and accepted as a deliberate inclusion, not an oversight.
+
+**Commits:** `67bc553` (comment flagging the gap, pre-dates this section),
+`f4b6903` (remove defaults), `f49645a` (replace source list).
+
+## Post-PR: query strategy overhaul (source balancing)
+
+With the new source list in place, the PM ran a real search and noticed the
+result set skewed heavily toward one source. This led to an extended live
+testing session against the real NewsAPI, directly comparing query
+strategies with real data before settling on a final design — full
+methodology and every intermediate result are in the conversation transcript
+for this session; summarized here and in
+`docs/decisions.md` (decision #1).
+
+**What was tested, in order:** (1) single relevancy call, flat per-source cap
+— confirmed one source could provide 13 of 20 results, 14 of 20 sources
+contributing nothing; (2) raising the cap from 3 to 5 — more articles, same
+sources represented, no diversity gain; (3) a second call sorted by
+`popularity` to top up coverage — added 0-1 articles beyond relevancy in
+every test, order-independent; (4) extending the window to 30 days — tested
+directly and found to *not* reliably improve diversity, because NewsAPI's
+free-tier 100-result retrieval ceiling means more total matching content
+(which a 30-day window produces) increases competition for the same fixed
+number of retrievable slots, squeezing out infrequently-covered sources; in
+2 of 3 topics tested, 7-day actually beat 30-day on source count; (5) 20
+individual per-source calls (guaranteed-diversity approach) — tested
+directly, found only a 1-source, 3-article improvement over the cheap
+two-call version for 10x the request cost, judged not worth it; (6) a second
+call sorted by `publishedAt` (newest) instead of `popularity` — this is what
+worked: 10-30 extra articles beyond relevancy, and meaningfully more source
+diversity, because recency and relevancy surface largely different articles
+for the same query.
+
+**Final design:** two calls per search (relevancy, then publishedAt),
+`pageSize=100` each (the per-request max), combined via a new pure function
+`compileBalancedArticles` (`src/newsapi.js`) — relevancy capped at 3 per
+source, publishedAt tops up to 5 per source, deduplicated by URL. The second
+call is best-effort: a failure there doesn't fail the whole request, since
+the first call alone is still a complete, valid result. `buildArticlesUrl`
+was parameterized to accept `sortBy` (previously hardcoded to `'relevancy'`)
+and `pageSize` raised from 20 to 100. TDD followed: 5 new tests for
+`compileBalancedArticles`, 2 updated for the `sortBy`/`pageSize` changes.
+Verified live end-to-end through the actual running app (not just ad hoc
+scripts) — a real "inflation" search returned 44 articles across 11 sources,
+every source capped at 5, matching the design exactly.
+
+**Cost:** 2 NewsAPI requests per search instead of 1 — roughly 50
+searches/day instead of 100 against the free tier's cap. Explicitly accepted
+by the PM given the diversity gain.
+
+**Commit:** `5eb5223`.
+
 ## Outcome
 
-All 10 plan tasks implemented, reviewed twice each (spec + quality), three real defects found and fixed across two tasks (Task 3: crash risks in path resolution; Task 5: crash risk + silent error swallowing in the server), one cosmetic fix (Task 6: line endings), one process gap resolved directly by the controller during Task 10 (missing plan-doc commit, repeating a Feature 1 mistake — worth naming plainly), and one documentation-visibility fix applied after the final holistic review. Test suite: 30/30 passing. Branch pushed for PR review; not yet merged to `main`.
+All 10 plan tasks implemented, reviewed twice each (spec + quality), three real defects found and fixed across two tasks (Task 3: crash risks in path resolution; Task 5: crash risk + silent error swallowing in the server), one cosmetic fix (Task 6: line endings), one process gap resolved directly by the controller during Task 10 (missing plan-doc commit, repeating a Feature 1 mistake — worth naming plainly), one documentation-visibility fix applied after the final holistic review, and — after the PR was opened — a full source-list overhaul and a query-strategy overhaul, both driven by real testing once a real API key made genuine verification possible (see above). Test suite: 35/35 passing (up from 29 after the source-list overhaul, plus the 6 new/updated tests for `compileBalancedArticles`/`buildArticlesUrl`). Branch pushed for PR review; not yet merged to `main`.
 
 **Not done / explicitly out of scope:**
-- **Source ID verification against a live NewsAPI response** — no real API key was available during implementation. The 20 ids in `src/sources.js` are unverified; a wrong id fails silently (returns zero articles for that source, no error). This must be done before the feature is trusted with a real key. Now flagged both here and via a code comment in `src/sources.js`.
 - Claude API integration / article analysis (Feature 3) and results display (Feature 4) — not started, as designed.
-- Full article text retrieval — NewsAPI's free tier only provides a truncated `content` snippet, not full article bodies. This is a real constraint on Feature 3's "direct quotes" requirement, flagged in the design spec for that future feature's design session, not addressed here.
-- README documentation of the local setup workflow (config file, `start.bat`) — out of scope per this feature's narrow documentation task; worth a follow-up.
+- Full article text retrieval — NewsAPI's free tier only provides a truncated `content` snippet, not full article bodies (confirmed directly in the live verification above: `content` fields end in a `[+N chars]` marker). This is a real constraint on Feature 3's "direct quotes" requirement, flagged in the design spec for that future feature's design session, not addressed here.
+- README documentation of the local setup workflow (config file, `start.bat`) and the new query-balancing behavior — still an open decision as of this entry (see the conversation for the "what goes in the README" discussion in progress).

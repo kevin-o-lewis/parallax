@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.value = source.id;
-    checkbox.checked = DEFAULT_SELECTED_SOURCE_IDS.includes(source.id);
     checkbox.addEventListener('change', handleFieldChange);
 
     label.appendChild(checkbox);
