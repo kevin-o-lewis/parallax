@@ -27,6 +27,11 @@ test('builds a request with the given model, topic, and article text', () => {
   assert.match(request.messages[0].content, /Other News/);
 });
 
+test('disables thinking, since this is deterministic extraction, not open-ended reasoning', () => {
+  const request = buildAnalysisRequest('AI regulation', [], 'claude-sonnet-5');
+  assert.deepEqual(request.thinking, { type: 'disabled' });
+});
+
 test('parses a valid tool_use response into facts and perspectives', () => {
   const responseBody = {
     content: [
@@ -101,6 +106,23 @@ test('callClaudeAnalysis returns a parsed result on success', async () => {
 
   const result = await callClaudeAnalysis('AI regulation', [], 'test-key', 'claude-sonnet-5', fakeFetch);
   assert.deepEqual(result, { result: { facts: [], perspectives: [] } });
+});
+
+test('callClaudeAnalysis sends a request with a timeout signal', async () => {
+  let capturedOptions;
+  const fakeFetch = async (url, options) => {
+    capturedOptions = options;
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        content: [{ type: 'tool_use', name: ANALYSIS_TOOL_NAME, input: { facts: [], perspectives: [] } }],
+      }),
+    };
+  };
+
+  await callClaudeAnalysis('AI regulation', [], 'test-key', 'claude-sonnet-5', fakeFetch);
+  assert.ok(capturedOptions.signal instanceof AbortSignal);
 });
 
 test('callClaudeAnalysis returns a mapped error on a non-ok response', async () => {

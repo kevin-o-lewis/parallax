@@ -66,6 +66,13 @@ function buildAnalysisRequest(topic, preparedArticles, model) {
   return {
     model,
     max_tokens: 8192,
+    // This is a deterministic extraction task (find facts/perspectives already
+    // present in the given text, cite them verbatim) rather than open-ended
+    // reasoning, so thinking is explicitly disabled. Sonnet 5 runs adaptive
+    // thinking by default when `thinking` is omitted, and thinking shares the
+    // max_tokens budget with the response — on a large article batch that
+    // could eat into the tool-call output and truncate it mid-JSON.
+    thinking: { type: 'disabled' },
     system: SYSTEM_PROMPT,
     messages: [
       { role: 'user', content: `Topic: ${topic}\n\n${articlesBlock}` },
@@ -129,6 +136,13 @@ function mapClaudeError(status, body) {
   return { status: 502, message: "Couldn't reach the Claude API. Check your internet connection and try again." };
 }
 
+// Every other stage of this pipeline has an explicit time bound (per-article
+// scrape timeout, article count cap, per-article text cap) for cost/failure
+// containment — this is the same protection for the one remaining unbounded
+// network call: a hang here would otherwise never resolve, leaving the
+// browser's "Analyzing articles…" stage stuck indefinitely.
+const CLAUDE_REQUEST_TIMEOUT_MS = 60000;
+
 async function callClaudeAnalysis(topic, preparedArticles, apiKey, model, fetchImpl) {
   const doFetch = fetchImpl || fetch;
   const requestBody = buildAnalysisRequest(topic, preparedArticles, model);
@@ -141,6 +155,7 @@ async function callClaudeAnalysis(topic, preparedArticles, apiKey, model, fetchI
       'content-type': 'application/json',
     },
     body: JSON.stringify(requestBody),
+    signal: AbortSignal.timeout(CLAUDE_REQUEST_TIMEOUT_MS),
   });
 
   const data = await response.json();
