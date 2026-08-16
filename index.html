@@ -9,29 +9,37 @@
   <main>
     <h1>Parallax</h1>
 
-    <div class="field">
-      <label for="topic-input">What topic do you want to research?</label>
-      <input type="text" id="topic-input" placeholder="e.g., AI regulation, Ukraine conflict, climate change">
-      <p class="error" id="topic-error"></p>
-    </div>
-
-    <div class="field">
-      <label>Select news sources (20 available)</label>
-      <div class="source-actions">
-        <button type="button" id="select-all-btn">Select All</button>
-        <button type="button" id="deselect-all-btn">Deselect All</button>
+    <div id="search-view">
+      <div class="field">
+        <label for="topic-input">What topic do you want to research?</label>
+        <input type="text" id="topic-input" placeholder="e.g., AI regulation, Ukraine conflict, climate change">
+        <p class="error" id="topic-error"></p>
       </div>
-      <div class="source-list" id="source-list"></div>
-      <p class="error" id="sources-error"></p>
+
+      <div class="field">
+        <label>Select news sources (20 available)</label>
+        <div class="source-actions">
+          <button type="button" id="select-all-btn">Select All</button>
+          <button type="button" id="deselect-all-btn">Deselect All</button>
+        </div>
+        <div class="source-list" id="source-list"></div>
+        <p class="error" id="sources-error"></p>
+      </div>
+
+      <button type="button" id="submit-btn" disabled>Submit</button>
+
+      <p class="progress" id="progress"></p>
     </div>
 
-    <button type="button" id="submit-btn" disabled>Submit</button>
-
-    <p class="progress" id="progress"></p>
+    <div id="results-view" hidden>
+      <button type="button" id="back-to-search-btn">← Back to search</button>
+      <div id="results-content"></div>
+    </div>
   </main>
 
   <script src="src/sources.js"></script>
   <script src="src/validation.js"></script>
+  <script src="src/results.js"></script>
   <script src="src/pipeline.js"></script>
   <script src="src/app.js"></script>
 </body>
