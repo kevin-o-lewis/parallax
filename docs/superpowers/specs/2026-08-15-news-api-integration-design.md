@@ -104,7 +104,57 @@ for that source with no error, which would be very hard to notice later.
 
 ## Query construction
 
-For a request with topic `t` and selected source ids `s`, the server calls:
+**Superseded from the original single-call design below** (kept for history —
+see `docs/decisions.md` for the full rationale and the testing that drove
+this change; see the ledger for the raw test data). For a request with topic
+`t` and selected source ids `s`, the server makes two calls:
+
+```
+GET https://newsapi.org/v2/everything
+  ?q={t}
+  &sources={s joined by comma}
+  &from={7 days before today, ISO 8601 date}
+  &to={today, ISO 8601 date}
+  &sortBy=relevancy
+  &pageSize=100
+  &apiKey={server's key}
+```
+
+```
+GET https://newsapi.org/v2/everything
+  ?q={t}
+  &sources={s joined by comma}
+  &from={7 days before today, ISO 8601 date}
+  &to={today, ISO 8601 date}
+  &sortBy=publishedAt
+  &pageSize=100
+  &apiKey={server's key}
+```
+
+The two result sets are combined by `compileBalancedArticles`
+(`src/newsapi.js`): articles from the relevancy call are kept up to 3 per
+source; articles from the publishedAt (newest-first) call then top up each
+source to a maximum of 5, deduplicated by URL. The second call is
+best-effort — if it fails, the request still succeeds with relevancy-only
+results rather than failing the whole search.
+
+- **Date window:** still fixed 7 days — extending to 30 days was tested and
+  found not to reliably improve source diversity (see decision record), so
+  the original recency-focused reasoning stands.
+- **Two calls, not one:** a single relevancy-sorted call reliably let one
+  prolific source dominate results (one real test: 13 of 20 articles from a
+  single source, 14 of 20 selected sources contributing nothing). Testing a
+  second call sorted by `popularity` added almost nothing on top of
+  relevancy; `publishedAt` added substantially more, because recency and
+  relevancy surface largely different articles for the same query.
+- **`pageSize=100`** (the per-request maximum): both calls need a large
+  candidate pool for the per-source balancing to have enough to work with.
+- **Cost:** 2 NewsAPI requests per search instead of 1 — roughly 50
+  searches/day instead of 100 against the free tier's 100-requests/day cap.
+  Deliberately accepted in exchange for meaningfully better source diversity
+  (see decision record for the comparison data).
+
+### Original single-call design (superseded)
 
 ```
 GET https://newsapi.org/v2/everything
@@ -117,15 +167,10 @@ GET https://newsapi.org/v2/everything
   &apiKey={server's key}
 ```
 
-- **Date window:** fixed 7 days, computed fresh on every request server-side.
-  Not user-configurable in this feature — a deliberate simplicity choice, not
-  a NewsAPI technical ceiling (the free tier allows up to 1 month).
-- **`sortBy=relevancy`**: articles are being gathered for a later synthesis
-  step (Feature 3), not for chronological reading, so topical relevance is
-  prioritized over pure recency.
-- **`pageSize=20`**: caps the sample size fed forward; keeps a future
-  Feature 3 prompt from growing unbounded regardless of how many sources or
-  how much volume a topic has.
+This was the shipped design until real-world testing (post-PR, once a real
+API key was available) showed it let single prolific sources dominate
+results. Kept here as a historical record of what was originally decided and
+why it changed.
 
 ## Response shape
 
@@ -192,12 +237,16 @@ already carrying the project's Status line.
 
 ## Testing
 
-Query construction (building the NewsAPI URL from topic/sources/dates) and
-error-code-to-message mapping are pure functions — tested the same way as
+Query construction (building the NewsAPI URL from topic/sources/dates),
+error-code-to-message mapping, and the two-call balancing logic
+(`compileBalancedArticles`) are pure functions — tested the same way as
 Feature 1, with Node's built-in `node:test`, no new dependencies. The actual
 HTTP proxying and static file serving are thin glue around those functions,
 verified manually against the real NewsAPI (same pattern Feature 1 used for
-its DOM-wiring layer).
+its DOM-wiring layer) — including, for the balancing logic specifically,
+extensive live testing against real search results across multiple topics
+before the final design (two calls, relevancy capped at 3, publishedAt
+topping up to 5) was locked in. See the ledger for that testing record.
 
 ## Out of scope for this spec
 
