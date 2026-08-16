@@ -14,9 +14,43 @@ Exactly one feature should be `Next` at any time.
 | 1 | Search & source selection interface | MVP | Done | [Spec](superpowers/specs/2026-08-15-search-source-selection-design.md) | [Plan](superpowers/plans/2026-08-15-search-source-selection.md) | [Ledger](superpowers/ledgers/2026-08-15-search-source-selection.md) |
 | 2 | News API integration | MVP | Done | [Spec](superpowers/specs/2026-08-15-news-api-integration-design.md) | [Plan](superpowers/plans/2026-08-15-news-api-integration.md) | [Ledger](superpowers/ledgers/2026-08-15-news-api-integration.md) |
 | 3 | Claude API analysis | MVP | Done | [Spec](superpowers/specs/2026-08-15-claude-api-analysis-design.md) | [Plan](superpowers/plans/2026-08-15-claude-api-analysis.md) | [Ledger](superpowers/ledgers/2026-08-15-claude-api-analysis.md) |
-| 4 | Results display with traceability | MVP | In progress | [Spec](superpowers/specs/2026-08-16-results-display-design.md) | [Plan](superpowers/plans/2026-08-16-results-display.md) | — |
+| 4 | Results display with traceability | MVP | Done | [Spec](superpowers/specs/2026-08-16-results-display-design.md) | [Plan](superpowers/plans/2026-08-16-results-display.md) | [Ledger](superpowers/ledgers/2026-08-16-results-display.md) |
 
 ## Session Notes
+
+## 2026-08-16 (2)
+
+**Shipped:** Feature 4 — Results display with traceability. The app now
+renders Feature 3's `{facts, perspectives}` analysis output as an actual
+results page — cards with statements/summaries, source links, and
+expandable verbatim quotes — replacing the console-log-only stub. This was
+the last MVP feature; all four are now built.
+
+**Session Summary:** Design used the visual brainstorming companion to settle
+three real open questions from the PRD: stacked Facts-then-Perspectives
+sections (not tabs or side-by-side columns), citations collapsed behind a
+per-card "show quotes" toggle with source attribution always visible
+(a deliberate trade-off against the PRD's "traceability is the sole
+safety mechanism" framing, flagged explicitly before the PM confirmed it),
+and results shown as a same-page view swap rather than a second HTML page.
+Built via `subagent-driven-development` (5 tasks, two-stage review each). One
+real issue was caught and fixed, not rubber-stamped: a WCAG AA contrast miss
+in the results-view CSS, then a *second*, smaller miss on that same fix
+(`.diagnostics` at `#777`, still ~4.478:1 against the needed 4.5:1) caught
+only by a final holistic review across the whole branch that measured
+contrast numerically rather than eyeballing it. A genuine pre-existing bug
+also got fixed along the way: successful searches used to leave the search
+form permanently disabled, since only the error path re-enabled it.
+
+Manual verification (Task 5) was run directly by the session controller
+rather than a subagent, per this file's own documented sandbox constraint on
+dev servers — and used a fixture injected directly into `renderResultsHTML`
+rather than a real search, since no real API keys are available in this
+environment. That's the same known gap Feature 3's ledger already carried
+forward, unchanged by this feature: a genuine result from a real search,
+with the results view spot-checked against real citations, still hasn't
+happened. Do that before relying on this for actual use — see the ledger for
+the full record.
 
 ## 2026-08-16
 

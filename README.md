@@ -64,6 +64,6 @@ was rejected.
 
 ## Status
 
-Pre-MVP
+MVP
 
 See `docs/roadmap.md` for build progress and `docs/prd-parallax.md` for full requirements.
