@@ -87,8 +87,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }).then((result) => {
       if (result.articles.length === 0) {
         progressEl.textContent = 'No articles found for this topic in the selected sources over the last 7 days. Try different sources or a broader topic.';
+      } else if (result.analysis.facts.length === 0 && result.analysis.perspectives.length === 0) {
+        progressEl.textContent = "Claude couldn't produce verifiable results for this topic. See console for data.";
       } else {
-        progressEl.textContent = 'Fetched ' + result.articles.length + ' articles. See console for data (Claude analysis not yet implemented).';
+        progressEl.textContent = 'Analyzed ' + result.analysis.articlesAnalyzed + ' articles — found ' +
+          result.analysis.facts.length + ' facts and ' + result.analysis.perspectives.length +
+          ' perspectives. See console for full data (results display not yet implemented).';
       }
       console.log('Pipeline result:', result);
     }).catch((err) => {

@@ -1,0 +1,9 @@
+{
+  "name": "parallax",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Gather news on any topic from multiple trusted sources and synthesize them into structured facts and opposing interpretations.",
+  "dependencies": {
+    "@extractus/article-extractor": "^9.0.0"
+  }
+}

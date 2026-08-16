@@ -13,7 +13,7 @@ Exactly one feature should be `Next` at any time.
 |---|---|---|---|---|---|---|
 | 1 | Search & source selection interface | MVP | Done | [Spec](superpowers/specs/2026-08-15-search-source-selection-design.md) | [Plan](superpowers/plans/2026-08-15-search-source-selection.md) | [Ledger](superpowers/ledgers/2026-08-15-search-source-selection.md) |
 | 2 | News API integration | MVP | Done | [Spec](superpowers/specs/2026-08-15-news-api-integration-design.md) | [Plan](superpowers/plans/2026-08-15-news-api-integration.md) | [Ledger](superpowers/ledgers/2026-08-15-news-api-integration.md) |
-| 3 | Claude API analysis | MVP | Next | — | — | — |
+| 3 | Claude API analysis | MVP | In progress | — | — | — |
 | 4 | Results display with traceability | MVP | — | — | — | — |
 
 ## Session Notes
