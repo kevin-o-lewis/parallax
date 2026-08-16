@@ -1,3 +1,9 @@
+// NOTE: these ids were written from memory during Feature 1 and trimmed to
+// 20 during Feature 2, but were never verified against a live call to
+// NewsAPI's /v2/top-headlines/sources endpoint (no real API key was
+// available during implementation). A wrong id fails silently — it just
+// returns zero articles for that source, no error. Verify against a live
+// response before trusting search results, then remove this note.
 const NEWS_SOURCES = [
   { id: 'abc-news', name: 'ABC News' },
   { id: 'al-jazeera-english', name: 'Al Jazeera' },
