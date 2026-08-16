@@ -20,6 +20,9 @@ function loadConfig() {
     if (!parsed.newsApiKey || typeof parsed.newsApiKey !== 'string') {
       return null;
     }
+    if (!parsed.claudeApiKey || typeof parsed.claudeApiKey !== 'string') {
+      return null;
+    }
     return parsed;
   } catch {
     return null;
@@ -28,7 +31,7 @@ function loadConfig() {
 
 const config = loadConfig();
 if (!config) {
-  console.error('Missing config.local.json — copy config.example.json and add your NewsAPI key.');
+  console.error('Missing config.local.json — copy config.example.json and add your NewsAPI key and Claude API key.');
   process.exit(1);
 }
 
