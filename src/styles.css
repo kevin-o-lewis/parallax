@@ -96,3 +96,85 @@ input[type="text"].invalid {
   font-size: 13px;
   color: #555;
 }
+
+#back-to-search-btn {
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+#results-content h2 {
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+#results-content h3 {
+  font-size: 16px;
+  margin: 24px 0 12px;
+}
+
+.result-card {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.card-statement {
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.card-summary {
+  font-size: 13px;
+  margin: 0 0 6px;
+  color: #333;
+}
+
+.card-sources {
+  font-size: 12px;
+  margin: 0 0 6px;
+}
+
+.card-sources a {
+  color: #0066cc;
+  margin-right: 8px;
+}
+
+.quote-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #0066cc;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.quotes blockquote {
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  border-left: 3px solid #ccc;
+  font-size: 13px;
+  color: #444;
+  font-style: italic;
+}
+
+.section-empty-note {
+  color: #666;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.diagnostics {
+  margin-top: 16px;
+  font-size: 12px;
+  color: #666;
+  border-top: 1px solid #eee;
+  padding-top: 8px;
+}
