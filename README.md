@@ -10,6 +10,12 @@ News consumption is fragmented and time-consuming. When a major story breaks, ge
 
 Parallax lets you search for any news topic and select which sources to trust. It fetches recent articles on that topic, sends them to Claude for synthesis, and returns a structured breakdown: key facts with supporting quotes and sources, plus the distinct perspectives different outlets are taking on those facts. Every claim is traceable back to the original article, so you can verify before forming an opinion.
 
+## Setup
+
+1. Copy `config.example.json` to `config.local.json` and fill in a NewsAPI key and a Claude API key.
+2. Run `npm install` once, to install the one dependency used for full-article-text extraction (`@extractus/article-extractor`).
+3. Double-click `start.bat` (or run `node server.js`) to launch the app at `http://localhost:3000`.
+
 ## Search & source balancing
 
 Parallax searches the last 7 days of articles for each topic. This is a
