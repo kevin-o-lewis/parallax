@@ -3,7 +3,7 @@
 Gather news on any topic from multiple trusted sources and synthesize them into structured facts and opposing interpretations, each with direct quotes and source links.
 
 **Type:** Personal Tool  
-**Stack:** Vanilla HTML/CSS/JavaScript on the front end; a plain Node.js server (built-in modules only, zero npm dependencies) handles API-key proxying server-side.
+**Stack:** Vanilla HTML/CSS/JavaScript on the front end; a plain Node.js server (built-in modules only, with one dependency — `@extractus/article-extractor`, used solely to extract full article text from a fetched page's HTML for Claude analysis — handles API-key proxying server-side).
 
 ## Constraints
 
